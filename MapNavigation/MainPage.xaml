@@ -1,0 +1,125 @@
+﻿<Page
+    x:Class="MapNavigation.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MapNavigation"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:map="using:Windows.UI.Xaml.Controls.Maps"
+    xmlns:con="using:MapNavigation.Converter"
+    xmlns:con2="using:StdOttUwp.Converters"
+    xmlns:geo="using:GeoCommon"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    Loaded="Page_Loaded" Unloaded="Page_Unloaded">
+
+    <Page.Resources>
+        <con:PositionConverter x:Key="posCon"/>
+
+        <con2:TruthyConverter x:Key="rotationCon">
+            <con2:TruthyConverter.EqualsValue>
+                <map:MapInteractionMode>Auto</map:MapInteractionMode>
+            </con2:TruthyConverter.EqualsValue>
+            <con2:TruthyConverter.NotEqualsValue>
+                <map:MapInteractionMode>Disabled</map:MapInteractionMode>
+            </con2:TruthyConverter.NotEqualsValue>
+        </con2:TruthyConverter>
+
+        <con2:TruthyConverter x:Key="truthyCon"/>
+        <con2:VisibleCollapsedConverter x:Key="visCon"/>
+
+        <con2:IsValueToTwoValueConverter x:Key="destCon">
+            <con2:IsValueToTwoValueConverter.EqualsValue>
+                <x:Boolean>True</x:Boolean>
+            </con2:IsValueToTwoValueConverter.EqualsValue>
+            <con2:IsValueToTwoValueConverter.NotEqualsValue>
+                <x:Boolean>False</x:Boolean>
+            </con2:IsValueToTwoValueConverter.NotEqualsValue>
+        </con2:IsValueToTwoValueConverter>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <map:MapControl Grid.Row="1" Name="map" MapServiceToken="{Binding Token}"
+                        RotateInteractionMode="{Binding EnableRotating,Converter={StaticResource rotationCon}}"
+                        Center="{Binding CurrentPosition,Mode=TwoWay,Converter={StaticResource posCon}}"
+                        ZoomLevel="{Binding ZoomLevel,Mode=TwoWay}" MapTapped="Map_MapTapped" MapHolding="Map_MapHolding">
+            <map:MapControl.ContextFlyout>
+                <MenuFlyout x:Name="mfyMap">
+                    <MenuFlyoutItem Text="Add point to end" Icon="Add"
+                                    IsEnabled="{Binding CurrentRoute,Converter={StaticResource truthyCon}}"
+                                    Click="MfiAddEndPoint_Click"/>
+                    <MenuFlyoutItem Text="Add point to begin" Icon="Add"
+                                    IsEnabled="{Binding CurrentRoute,Converter={StaticResource truthyCon}}"
+                                    Click="MfiAddBeginPoint_Click"/>
+                    <MenuFlyoutItem Text="Insert point after nearest" Icon="Download" 
+                                    IsEnabled="{Binding CurrentRoute,Converter={StaticResource truthyCon}}"
+                                    Click="MfiInsertAfterPoint_Click"/>
+                    <MenuFlyoutItem Text="Insert Point before nearest" Icon="Download" 
+                                    IsEnabled="{Binding CurrentRoute,Converter={StaticResource truthyCon}}"
+                                    Click="MfiInsertBeforePoint_Click"/>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem Text="Remove Nearest Point" Icon="Remove" 
+                                    IsEnabled="{Binding CurrentRoute,Converter={StaticResource truthyCon}}"
+                                    Click="MfiRemovePoint_Click"/>
+                </MenuFlyout>
+            </map:MapControl.ContextFlyout>
+        </map:MapControl>
+
+        <ProgressRing Grid.Row="1" Name="prgGeolocating" HorizontalAlignment="Right" VerticalAlignment="Top"
+                      Width="50" Height="50" Visibility="Visible" IsActive="False"/>
+        <Grid Grid.Row="1" Name="gidGeoIndicator" Visibility="Collapsed" Margin="10"
+              HorizontalAlignment="Right" VerticalAlignment="Top"
+              Background="{ThemeResource CheckBoxBackgroundThemeBrush}">
+            <SymbolIcon Name="sinGeolocating" Symbol="MapPin" Width="20" Height="20" Margin="5" />
+        </Grid>
+
+        <StackPanel Visibility="Collapsed">
+            <Button Content="Start" Margin="10" Click="BtnStart_Click"/>
+            <Button Content="Stop" Margin="10" Click="BtnStop_Click"/>
+            <TextBlock Name="tblDist"/>
+            <TextBlock Name="tblDuration"/>
+            <TextBlock Name="tblAvgSpeed"/>
+            <TextBlock Name="tblCurrentSpeed"/>
+            <TextBlock Text="Raw:" Margin="10"/>
+            <TextBlock Name="tblRaw"/>
+        </StackPanel>
+    </Grid>
+
+    <Page.BottomAppBar>
+        <CommandBar>
+            <CommandBar.PrimaryCommands>
+                <AppBarButton Label="Remove last point" Icon="Clear"
+                              IsEnabled="{Binding CurrentRoute.Path.Length,Converter={StaticResource truthyCon}}"
+                              Visibility="{Binding AddingMode,Converter={StaticResource visCon}}"
+                              Click="AbbRemoveLastPoint_Click"/>
+                <AppBarButton Label="Previous dest point" Icon="Previous" 
+                              IsEnabled="{Binding DirectionLineDest,Converter={StaticResource destCon}}"
+                              Click="AbbPreviousDestPoint_Click"/>
+                <AppBarButton Label="Next dest point" Icon="Next" 
+                              IsEnabled="{Binding DirectionLineDest,Converter={StaticResource destCon}}"
+                              Click="AbbNextDestPoint_Click"/>
+            </CommandBar.PrimaryCommands>
+            
+            <CommandBar.SecondaryCommands>
+                <AppBarButton Label="{Binding DirectionLineSrc}" Icon="Account" Click="AbbDirectionLineSrc_Click"/>
+                <AppBarButton Label="{Binding DirectionLineDest}" Icon="BackToWindow" Click="AbbDirectionLineDest_Click"/>
+                <AppBarSeparator />
+                <AppBarToggleButton Label="Adding Mode" Icon="Add" IsChecked="{Binding AddingMode,Mode=TwoWay}"/>
+                <AppBarSeparator />
+                <AppBarToggleButton Label="Current Position" Icon="MapPin"
+                                    IsChecked="{Binding FocusGeoposition}" Click="AtbCurrentPosition_Click"/>
+                <AppBarToggleButton Label="Auto Rotation" Icon="RotateCamera"
+                                    IsChecked="{Binding AutoRotate,Mode=TwoWay}"/>
+                <AppBarToggleButton Label="Enable Rotate" Icon="Rotate" 
+                                    IsChecked="{Binding EnableRotating,Mode=TwoWay}"/>
+                <AppBarButton Label="Reset Rotation" Icon="Directions" Click="AbbResetRotation_Click"/>
+                <AppBarButton Label="Settings" Icon="Setting" Click="AbbSettings_Click"/>
+            </CommandBar.SecondaryCommands>
+        </CommandBar>
+    </Page.BottomAppBar>
+</Page>

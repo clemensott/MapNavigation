@@ -1,0 +1,42 @@
+﻿<Page
+    x:Class="MapNavigation.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MapNavigation"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:con2="using:StdOttUwp.Converters"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.Resources>
+        <con2:TruthyConverter x:Key="notNullCon"/>
+        <con2:CollapsedVisibleConverter x:Key="colCon" />
+    </Page.Resources>
+
+    <Grid>
+        <ListBox ItemsSource="{Binding Routes}" SelectedItem="{Binding CurrentRoute,Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBox Text="{Binding Name,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock Margin="10" FontSize="20" TextWrapping="WrapWholeWords"
+                   Visibility="{Binding Routes.Count,Converter={StaticResource colCon}}">
+            No Routes. Press + to add a route.
+        </TextBlock>
+    </Grid>
+
+    <Page.BottomAppBar>
+        <CommandBar>
+            <CommandBar.PrimaryCommands>
+                <AppBarButton Label="Back" Icon="Back" Click="AbbBack_Click"/>
+                <AppBarButton Label="Add Route" Icon="Add" Click="AbbAdd_Click"/>
+                <AppBarButton Label="Remove Route" Icon="Remove"
+                              IsEnabled="{Binding CurrentRoute,Converter={StaticResource notNullCon}}"
+                              Click="AbbRemove_Click"/>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
+    </Page.BottomAppBar>
+</Page>
